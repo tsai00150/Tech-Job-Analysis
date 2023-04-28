@@ -83,8 +83,14 @@ def predict(news):
             company, action, number = pos_extract(s, company, action, number, percent)
         prediction[i]['company'] = None if not company else max(company ,key=company.count)
         prediction[i]['action'] = None if not action else max(action, key=action.count)
-        prediction[i]['number'] = None if not number else int(max(number, key=number.count))
-        prediction[i]['percent'] = None if not percent else int(max(percent, key=percent.count))
+        try:
+            prediction[i]['number'] = int(max(number, key=number.count))
+        except:
+            prediction[i]['number'] = None
+        try:
+            prediction[i]['percent'] = int(max(percent, key=percent.count))
+        except:
+            prediction[i]['percent'] = None
         prediction[i]['date'] = news[i]['date']
     return prediction
 

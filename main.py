@@ -5,8 +5,8 @@ from csv_transform import updateCompanyInfo
 import json
 import csv
 
-# The crawled data stores directly in data.json
-crawl_reuters()
+# Crawl the web to get news, store data directly in data.json
+crawl_reuters('layoffs', 0, 262, 20)
 
 #############################################################
 
@@ -18,7 +18,7 @@ with open('prediction.json', 'w', encoding='utf-8') as f:
 
 #############################################################
 
-# compose the csv files
+# Compose the csv files
 companyCsv = [[None]*3]
 subsidaryCsv = [[None]*4]
 activityCsv = [[None]*9]
@@ -33,16 +33,17 @@ for i in range(len(prediction)):
     else:
         companyId, availableCompanyIndex = updateCompanyInfo(\
             prediction[i]['company'], companyCsv, subsidaryCsv, availableCompanyIndex)
-        if prediction[i]["number"]:
-            employeeChange = prediction[i]["action"]*prediction[i]["number"]
-        elif prediction[i]["percent"]:
-            employeeChange = prediction[i]["action"]*prediction[i]["percent"]*0.01
-        else:
-            employeeChange = 0
-        activityCsv.append([availableActivityIndex, companyId, prediction[i]['company'], \
-                            employeeChange, data[i]['title'], None, \
-                            data[i]['link'], 0.5, data[i]['date']])
-        availableActivityIndex += 1
+        if companyId:
+            if prediction[i]["action"] and prediction[i]["number"]:
+                employeeChange = prediction[i]["action"]*prediction[i]["number"]
+            elif prediction[i]["action"] and prediction[i]["percent"]:
+                employeeChange = prediction[i]["action"]*prediction[i]["percent"]*0.01
+            else:
+                employeeChange = 0
+            activityCsv.append([availableActivityIndex, companyId, prediction[i]['company'], \
+                                employeeChange, data[i]['title'], None, \
+                                data[i]['link'], 0.5, data[i]['date']])
+            availableActivityIndex += 1
 
 with open('.csv/company.csv', 'w', encoding='utf-8', newline='') as csvfile: 
     csvwriter = csv.writer(csvfile) 

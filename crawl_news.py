@@ -8,12 +8,8 @@ config= configparser.ConfigParser()
 config.read('config.ini')
 USERNAME = config['reuters']['username']
 PASSWORD = config['reuters']['password']
-STARTPAGE = 0
-ENDPAGE = 116
-STEPS = 20
-URL = "https://www.reuters.com/site-search/?query=layoff&section=technology&offset="
 
-def crawl_reuters():
+def crawl_reuters(keyword, startpage, endpage, steps):
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
@@ -34,11 +30,12 @@ def crawl_reuters():
     driver.find_element(By.XPATH, "//button[contains(@type, 'submit')]").click()
     time.sleep(10)
     data = []
-    links = []
-    for offset in range(STARTPAGE, ENDPAGE, STEPS):
-        url = URL + str(offset)
+    for offset in range(startpage, endpage, steps):
+        url = "https://www.reuters.com/site-search/?query={keyword}&section=technology&offset={offset}"\
+              .format(keyword=keyword, offset=str(offset))
         driver.get(url)
         urlist = driver.find_elements(By.XPATH, '//a[contains(@data-testid,"Heading")]')
+        links = []
         for url in urlist:    
             links.append(url.get_attribute('href')) 
             time.sleep(2)
