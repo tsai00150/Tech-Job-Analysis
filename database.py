@@ -1,3 +1,4 @@
+from crawl_company import wiki_info
 from neo4j import GraphDatabase
 import configparser
 config = configparser.ConfigParser()
@@ -22,6 +23,26 @@ def getCompanyId(name):
     driver.close()
     if records:   
         return records[0].data()['c.companyId']
+    return None
+
+def getCompanyById(companyId):
+
+    def helper(tx, companyId):
+        result = tx.run("MATCH (c:company) \
+                        WHERE c.companyId = $companyId \
+                        RETURN c", companyId=companyId)
+        records = list(result)
+        return records
+
+    with GraphDatabase.driver(URI, auth=AUTH) as driver:
+        driver.verify_connectivity()
+    with driver.session(database="neo4j") as session:
+        records = session.execute_read(helper, \
+                    companyId=companyId)
+    session.close()
+    driver.close()
+    if records:
+        return records[0]
     return None
 
 def getCompanyNodeAll():
@@ -54,14 +75,24 @@ def getActivityNodeAll():
     driver.close()
     return records
 
-def test():
-    def test1(tx):
-        result = tx.run("GRANT ROLE PUBLIC TO neo4j")
-        return list(result)
+def getActivityNodeByEmployee(company, employeeChange):
+
+    def helper(tx, num, company):
+        result = tx.run("MATCH (a:activity) \
+                        WHERE a.employeeChange = $num and \
+                        a.companyName = $company\
+                        RETURN a", num=num, company=company)
+        records = list(result)
+        return records
+
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         driver.verify_connectivity()
     with driver.session(database="neo4j") as session:
-        result = session.execute_read(test1)
+        records = session.execute_read(helper, \
+                    num=employeeChange, company=company)
     session.close()
     driver.close()
-    return result
+    if records:
+        return records[0]
+    return None
+
