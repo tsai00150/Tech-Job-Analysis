@@ -6,8 +6,9 @@ def wiki_info(company):
         url = "https://en.wikipedia.org/wiki/" + company
         r = requests.get(url)
         soup = BeautifulSoup(r.content, 'html.parser')
+        title = soup.find('span', attrs = {'class':'mw-page-title-main'})
         table = soup.find('table', attrs = {'class':'infobox vcard'})
-        company_info = {'Number of employees':None, 'sub':None, 'parent':None}
+        company_info = {'Company Name':title.text, 'Number of employees':None, 'sub':None, 'parent':None}
         for row in table.findAll('tr'):
             if row.find('th') != None:
                 if row.find('th').text == 'Number of employees':
