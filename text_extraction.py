@@ -5,7 +5,7 @@ def extract_key_sentence(text):
     # https://stackoverflow.com/questions/62776477/how-to-extract-sentences-with-key-phrases-in-spacy
     nlp = spacy.load("en_core_web_sm")
     phrase_matcher = PhraseMatcher(nlp.vocab)
-    phrases = ['layoff', 'lay', 'off']
+    phrases = ['layoff', 'lay', 'off', 'layoffs', 'cuts', 'cut']
     patterns = [nlp(text) for text in phrases]
     phrase_matcher.add('layoff', None, *patterns)
 
@@ -24,18 +24,19 @@ def pos_extract(text, company, action, number, percent):
     nlp = spacy.load("en_core_web_sm")
     matcher = Matcher(nlp.vocab)
     
-    company_pattern = [{'POS':'PROPN', 'OP' : '+'}]
-    matcher.add("company", [company_pattern])
+    company_pattern1 = [{'POS':'PROPN', 'OP' : '+'}]
+    company_pattern2 = [{'POS':'PROPN', "LEMMA":{"IN": ['Inc']}}]
+    matcher.add("company", [company_pattern1, company_pattern2])
 
-    action_pattern1 = [{'OP' : '+', "LEMMA":{"IN":['layoff', 'cut', 'reduce']}}]
+    action_pattern1 = [{'OP' : '+', "LEMMA":{"IN":['layoff', 'cut', 'reduce', 'laid', 'slash']}}]
     action_pattern2 = [{'OP' : '+', "LEMMA":{"IN":['lay']}}, {'OP' : '+', "LEMMA":{"IN":['off']}}]
     matcher.add("action", [action_pattern1, action_pattern2])
 
     number_pattern = [{'POS':'NUM', 'OP':'{1}'}, {'TEXT':{'NOT_IN':['%']}, 'OP' : '{,5}'}, \
-                      {'POS':'NOUN', 'OP':'+', "LEMMA":{"IN": ['people','employee','job','worker','staff']}}]
+                      {'POS':'NOUN', 'OP':'+', "LEMMA":{"IN": ['people','employee','job','worker','staff', 'cut', 'layoff', 'workforce']}}]
     matcher.add("number", [number_pattern])
     percent_pattern = [{'POS':'NUM', 'OP':'{1}'}, {'TEXT':{'IN':['%']}}, {'OP' : '{,5}'}, \
-                      {'POS':'NOUN', 'OP':'+', "LEMMA":{"IN": ['people','employee','job','worker','staff']}}]
+                      {'POS':'NOUN', 'OP':'+', "LEMMA":{"IN": ['people','employee','job','worker','staff', 'cut', 'layoff', 'workforce']}}]
     matcher.add("percent", [percent_pattern])
 
     doc = nlp(text)
@@ -57,7 +58,7 @@ def pos_extract(text, company, action, number, percent):
         if string_id == 'percent':
             percent.append(doc[start].text)
     
-    return company, action, number
+    return company, action, number, percent
 
 
 def print_pos_tags(doc):
@@ -78,9 +79,9 @@ def predict(news):
         number = []
         percent = []
         for s in [news[i]['title']]:
-            company, action, number = pos_extract(s, company, action, number, percent)
+            company, action, number, percent = pos_extract(s, company, action, number, percent)
         for s in extract_key_sentence(news[i]['paragraph']):
-            company, action, number = pos_extract(s, company, action, number, percent)
+            company, action, number, percent = pos_extract(s, company, action, number, percent)
         prediction[i]['company'] = None if not company else max(company ,key=company.count)
         prediction[i]['action'] = None if not action else max(action, key=action.count)
         try:
