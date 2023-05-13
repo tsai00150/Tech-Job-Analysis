@@ -7,7 +7,8 @@ import json
 import csv
 
 # Crawl the web to get news, store data directly in data.json
-# crawl_reuters('layoffs', 0, 262, 20)
+crawl_reuters('layoffs', 519, 1038, 20)
+
 
 #############################################################
 
@@ -20,46 +21,46 @@ import csv
 #############################################################
 
 # Compose the csv files
-companyCsv = [[None]*3]
-subsidaryCsv = [[None]*4]
-activityCsv = [[None]*9]
-prediction = json.load(open('prediction.json', encoding='utf-8'))
-data = json.load(open('data.json', encoding='utf-8'))
-availableCompanyIndex = len(getCompanyNodeAll())+1
-availableActivityIndex = len(getActivityNodeAll())+1
+# companyCsv = [[None]*3]
+# subsidaryCsv = [[None]*4]
+# activityCsv = [[None]*9]
+# prediction = json.load(open('prediction.json', encoding='utf-8'))
+# data = json.load(open('data.json', encoding='utf-8'))
+# availableCompanyIndex = len(getCompanyNodeAll())+1
+# availableActivityIndex = len(getActivityNodeAll())+1
 
-for i in range(len(prediction)):
-    if not prediction[i]['company']:
-        print('No company detected in the news; omit import')
+# for i in range(len(prediction)):
+#     if not prediction[i]['company']:
+#         print('No company detected in the news; omit import')
     
-    companyInfo = wiki_info(prediction[i]['company'])
-    if companyInfo:
-        realCompanyName = companyInfo['Company Name']
-        companyId, availableCompanyIndex = updateCompanyInfo(\
-            realCompanyName, companyCsv, subsidaryCsv, availableCompanyIndex)
-        if companyId:
-            if prediction[i]["action"] and prediction[i]["number"]:
-                employeeChange = prediction[i]["action"]*prediction[i]["number"]
-            elif prediction[i]["action"] and prediction[i]["percent"]:
-                employeeChange = prediction[i]["action"]*prediction[i]["percent"]*0.01
-            else:
-                employeeChange = 0
-            activityCsv, availableActivityIndex = updateActivityInfo(i, \
-                availableActivityIndex, companyId, realCompanyName, \
-                employeeChange, data, activityCsv, companyCsv)
+#     companyInfo = wiki_info(prediction[i]['company'])
+#     if companyInfo:
+#         realCompanyName = companyInfo['Company Name']
+#         companyId, availableCompanyIndex = updateCompanyInfo(\
+#             realCompanyName, companyCsv, subsidaryCsv, availableCompanyIndex)
+#         if companyId:
+#             if prediction[i]["action"] and prediction[i]["number"]:
+#                 employeeChange = prediction[i]["action"]*prediction[i]["number"]
+#             elif prediction[i]["action"] and prediction[i]["percent"]:
+#                 employeeChange = prediction[i]["action"]*prediction[i]["percent"]*0.01
+#             else:
+#                 employeeChange = 0
+#             activityCsv, availableActivityIndex = updateActivityInfo(i, \
+#                 availableActivityIndex, companyId, realCompanyName, \
+#                 employeeChange, data, activityCsv, companyCsv)
 
-with open('.csv/company.csv', 'w', encoding='utf-8', newline='') as csvfile: 
-    csvwriter = csv.writer(csvfile) 
-    csvwriter.writerow(['companyId', 'companyName', 'employeeNumber']) 
-    csvwriter.writerows(companyCsv)
+# with open('.csv/company.csv', 'w', encoding='utf-8', newline='') as csvfile: 
+#     csvwriter = csv.writer(csvfile) 
+#     csvwriter.writerow(['companyId', 'companyName', 'employeeNumber']) 
+#     csvwriter.writerows(companyCsv)
 
-with open('.csv/subsidary.csv', 'w', encoding='utf-8', newline='') as csvfile: 
-    csvwriter = csv.writer(csvfile) 
-    csvwriter.writerow(['parentId', 'parentName', 'subsidaryId', 'subsidaryName']) 
-    csvwriter.writerows(subsidaryCsv)
+# with open('.csv/subsidary.csv', 'w', encoding='utf-8', newline='') as csvfile: 
+#     csvwriter = csv.writer(csvfile) 
+#     csvwriter.writerow(['parentId', 'parentName', 'subsidaryId', 'subsidaryName']) 
+#     csvwriter.writerows(subsidaryCsv)
 
-with open('.csv/activity.csv', 'w', encoding='utf-8', newline='') as csvfile: 
-    csvwriter = csv.writer(csvfile) 
-    csvwriter.writerow(['activityId', 'companyId', 'companyName', 'employeeChange', \
-                        'newsTitle', 'newsSnippet', 'newsLink', 'confindence', 'date']) 
-    csvwriter.writerows(activityCsv)
+# with open('.csv/activity.csv', 'w', encoding='utf-8', newline='') as csvfile: 
+#     csvwriter = csv.writer(csvfile) 
+#     csvwriter.writerow(['activityId', 'companyId', 'companyName', 'employeeChange', \
+#                         'newsTitle', 'newsSnippet', 'newsLink', 'confindence', 'date']) 
+#     csvwriter.writerows(activityCsv)

@@ -31,21 +31,25 @@ def crawl_reuters(keyword, startpage, endpage, steps):
     time.sleep(10)
     data = []
     for offset in range(startpage, endpage, steps):
-        url = "https://www.reuters.com/site-search/?query={keyword}&section=technology&offset={offset}"\
+        url = "https://www.reuters.com/site-search/?query={keyword}&section=business&offset={offset}"\
               .format(keyword=keyword, offset=str(offset))
         driver.get(url)
+        time.sleep(5)
         urlist = driver.find_elements(By.XPATH, '//a[contains(@data-testid,"Heading")]')
         links = []
         for url in urlist:    
             links.append(url.get_attribute('href')) 
             time.sleep(2)
+        # print(links)
         for link in links:
             info = {}
             driver.get(link)
+           
             info['link'] = link
             info['title'] = driver.find_element(By.XPATH, '//h1[contains(@data-testid,"Heading")]').text
-            info['paragraph'] = driver.find_element(By.XPATH, '//div[contains(@class,"article-body__content__17Yit paywall-article")]').text
+            info['paragraph'] = driver.find_element(By.XPATH, '//div[contains(@class,"article-body__content__17Yit")]').text
             date_info = driver.find_element(By.XPATH,'//time[contains(@data-testid,"Text")]').text
+            print(info)
             try:
                 date = date_info.split("read")[1].split(':')[0]
                 month = date.split(',')[0]
@@ -54,7 +58,16 @@ def crawl_reuters(keyword, startpage, endpage, steps):
             except:
                 info['date'] = "Janurary 1 2000"
             data.append(info)
+    # print(data)
 
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
     driver.close()
+# def crawl_abc(keyword, page_num):
+#     options = webdriver.ChromeOptions()
+#     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+#     driver.set_window_size(1920,1080)
+#     time.sleep(10)
+#     for page in range(0, page_num+1):
+#         url = "https://abcnews.go.com/search?searchtext={keyword}&page={page}".format(keyword=keyword, page=str(page))
+#         driver.get(url)
