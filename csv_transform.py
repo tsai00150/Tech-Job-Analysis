@@ -6,6 +6,7 @@ COMPANY_SCALE_MINIMUM = [0, 1000, 10000, 100000]
 SCORE_ADDED_PER_NEWS = [1, 0.5, 0.33, 0.2]
 
 def newCompany(company, companyCsv, availableCompanyIndex):
+    # create a new company node in the database
     companyInfo = wiki_info(company)
     if not companyInfo:
         companyInfo = wiki_info(company+'_(company)')
@@ -16,6 +17,7 @@ def newCompany(company, companyCsv, availableCompanyIndex):
     return availableCompanyIndex, companyInfo
 
 def updateIndustryInfo(companyId, companyInfo, industryCsv, includeCsv, availableIndustryIndex):
+    # check and update additional industry information
     for industry in companyInfo['industry']:
         industryId = getIndustryId(industry)
         if not industryId:
@@ -33,6 +35,7 @@ def updateIndustryInfo(companyId, companyInfo, industryCsv, includeCsv, availabl
 
 def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex, \
                       industryCsv, includeCsv, availableIndustryIndex):
+    # update company information recursively, and also industry news
     companyId = getCompanyId(company)
     if not companyId:
         for row in companyCsv:
@@ -73,26 +76,29 @@ def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex, 
 
 def updateActivityInfo(dataIndex, availableActivityIndex, companyId, realCompanyName, \
                         employeeChange, data, activityCsv, companyCsv):
+    # update activity info
     activity = getActivityNodeByEmployee(realCompanyName, employeeChange)
     if activity: # the activity is in database
-        totalEmployee = getCompanyById(companyId).data()['c.employeeNumber']
+        totalEmployee = getCompanyById(companyId).data()
+        if totalEmployee:
+            totalEmployee = totalEmployee['c'].get('employeeNumber', None)
         if not totalEmployee:
             totalEmployee = 1
         for i in range(len(COMPANY_SCALE_MINIMUM)-1, -1, -1):
             if totalEmployee > COMPANY_SCALE_MINIMUM[i]:
-                confidence = min(activity.data()['a.confidence'] + \
+                confidence = min(activity.data()['a']['confidence'] + \
                             SCORE_ADDED_PER_NEWS[i], 1.0)
-                activityCsv.append([activity.data()['a.activityId'], \
-                                    activity.data()['a.companyId'], \
-                                    activity.data()['a.companyName'], \
-                                    activity.data()['a.employeeChange'], \
-                                    activity.data()['a.newsTitle'] + '\n' + \
+                activityCsv.append([activity.data()['a']['activityId'], \
+                                    activity.data()['a']['companyId'], \
+                                    activity.data()['a']['companyName'], \
+                                    activity.data()['a']['employeeChange'], \
+                                    activity.data()['a']['newsTitle'] + '\n' + \
                                     data[dataIndex]['title'], \
-                                    activity.data()['a.newsSnippet'], \
-                                    activity.data()['a.newsLink'] + '\n' + \
+                                    None, \
+                                    activity.data()['a']['newsLink'] + '\n' + \
                                     data[dataIndex]['link'], \
                                     confidence, \
-                                    activity.data()['a.date']])
+                                    activity.data()['a']['date']])
                 return activityCsv, availableActivityIndex
 
     for i in range(len(activityCsv)): # the activity is in csv
@@ -119,8 +125,8 @@ def updateActivityInfo(dataIndex, availableActivityIndex, companyId, realCompany
         
     # this is a brand new activity
     company = getCompanyById(companyId)
-    if company and company.data()['c.employeeNumber']:
-        totalEmployee = company.data()['c.employeeNumber']
+    if company and company.data()['c'].get('employeeNumber', None):
+        totalEmployee = company.data()['c']['employeeNumber']
     elif company:
         totalEmployee = 1
     else:
