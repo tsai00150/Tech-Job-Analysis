@@ -60,6 +60,21 @@ def getCompanyNodeAll():
     driver.close()
     return records
 
+def getIndustryNodeAll():
+
+    def helper(tx):
+        result = tx.run("MATCH (i:industry) RETURN i")
+        records = list(result)
+        return records
+
+    with GraphDatabase.driver(URI, auth=AUTH) as driver:
+        driver.verify_connectivity()
+    with driver.session(database="neo4j") as session:
+        records = session.execute_read(helper)
+    session.close()
+    driver.close()
+    return records
+
 def getActivityNodeAll():
 
     def helper(tx):
@@ -96,3 +111,21 @@ def getActivityNodeByEmployee(company, employeeChange):
         return records[0]
     return None
 
+def getIndustryId(name):
+
+    def helper(tx, name):
+        result = tx.run(
+            "MATCH (i:industry {industryName: $name}) RETURN i.industryId",
+            name=name)
+        records = list(result)
+        return records
+
+    with GraphDatabase.driver(URI, auth=AUTH) as driver:
+        driver.verify_connectivity()
+    with driver.session(database="neo4j") as session:
+        records = session.execute_read(helper, name=name)
+    session.close()
+    driver.close()
+    if records:   
+        return records[0].data()['i.industryId']
+    return None

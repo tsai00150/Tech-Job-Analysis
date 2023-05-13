@@ -1,5 +1,6 @@
+from datetime import datetime
 from crawl_company import wiki_info
-from database import getCompanyId, getCompanyById, getActivityNodeByEmployee
+from database import getCompanyId, getIndustryId, getCompanyById, getActivityNodeByEmployee
 
 COMPANY_SCALE_MINIMUM = [0, 1000, 10000, 100000]
 SCORE_ADDED_PER_NEWS = [1, 0.5, 0.33, 0.2]
@@ -11,18 +12,27 @@ def newCompany(company, companyCsv, availableCompanyIndex):
         if not companyInfo:
             print('Company in news cannot be found in wiki: ', company)
             return None, None
-    employeeNum = companyInfo['Number of employees']
-    if employeeNum:
-        employeeNum = employeeNum.lstrip().replace('\xa0', ' ')\
-            .split(' ')[0].replace(',', '').split('[')[0]
-        try:
-            employeeNum = int(employeeNum)
-        except:
-            employeeNum = None
-    companyCsv.append([availableCompanyIndex, company, employeeNum])
+    companyCsv.append([availableCompanyIndex, companyInfo['Company Name'], companyInfo['Number of employees']])
     return availableCompanyIndex, companyInfo
 
-def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex):
+def updateIndustryInfo(companyId, companyInfo, industryCsv, includeCsv, availableIndustryIndex):
+    for industry in companyInfo['industry']:
+        industryId = getIndustryId(industry)
+        if not industryId:
+            for row in industryCsv:
+                if row[1] == industry:
+                    industryId = row[0]
+                    break
+            if not industryId:
+                # new industry not in database and csv
+                industryId = availableIndustryIndex
+                industryCsv.append([industryId, industry])
+                availableIndustryIndex += 1
+        includeCsv.append([industryId, companyId])
+    return industryCsv, includeCsv, availableIndustryIndex
+
+def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex, \
+                      industryCsv, includeCsv, availableIndustryIndex):
     companyId = getCompanyId(company)
     if not companyId:
         for row in companyCsv:
@@ -33,16 +43,19 @@ def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex):
             # new company not in database and csv, update company.csv first and get companyId
             companyId, companyInfo = newCompany(company, companyCsv, availableCompanyIndex)
             if not companyId:
-                return None, availableCompanyIndex
+                return None, availableCompanyIndex, availableIndustryIndex
             else:
+                industryCsv, includeCsv, availableIndustryIndex = updateIndustryInfo(\
+                    companyId, companyInfo, industryCsv, includeCsv, availableIndustryIndex)
                 availableCompanyIndex += 1
                 if companyInfo['sub']:
                     for subCompany in companyInfo['sub']:
                         subCompanyInfo = wiki_info(subCompany)
                         if subCompanyInfo:
                             subCompany = subCompanyInfo['Company Name']
-                            subId, availableCompanyIndex = updateCompanyInfo(\
-                                subCompany, companyCsv, subsidaryCsv, availableCompanyIndex)
+                            subId, availableCompanyIndex, availableIndustryIndex = updateCompanyInfo(\
+                                subCompany, companyCsv, subsidaryCsv, availableCompanyIndex, \
+                                industryCsv, includeCsv, availableIndustryIndex)
                             if subId:
                                 subsidaryCsv.append([companyId, company, subId, subCompany])
                 if companyInfo['parent']:
@@ -50,17 +63,19 @@ def updateCompanyInfo(company, companyCsv, subsidaryCsv, availableCompanyIndex):
                     parentCompanyInfo = wiki_info(parentCompany)
                     if parentCompanyInfo:
                         parentCompany = parentCompanyInfo['Company Name']
-                        parentId, availableCompanyIndex = updateCompanyInfo(parentCompany, companyCsv, subsidaryCsv, availableCompanyIndex)
+                        parentId, availableCompanyIndex, availableIndustryIndex = updateCompanyInfo(\
+                            parentCompany, companyCsv, subsidaryCsv, availableCompanyIndex, \
+                            industryCsv, includeCsv, availableIndustryIndex)
                         if parentId:
                             subsidaryCsv.append([parentId, parentCompany, companyId, company])
                 
-    return companyId, availableCompanyIndex
+    return companyId, availableCompanyIndex, availableIndustryIndex
 
 def updateActivityInfo(dataIndex, availableActivityIndex, companyId, realCompanyName, \
                         employeeChange, data, activityCsv, companyCsv):
     activity = getActivityNodeByEmployee(realCompanyName, employeeChange)
     if activity: # the activity is in database
-        totalEmployee = getCompanyById(companyId).data()['a.employeeNumber']
+        totalEmployee = getCompanyById(companyId).data()['c.employeeNumber']
         if not totalEmployee:
             totalEmployee = 1
         for i in range(len(COMPANY_SCALE_MINIMUM)-1, -1, -1):
@@ -96,13 +111,16 @@ def updateActivityInfo(dataIndex, availableActivityIndex, companyId, realCompany
                     activityCsv[i][4] += ' | ' + data[dataIndex]['title']
                     activityCsv[i][6] += ' | ' + data[dataIndex]['link']
                     activityCsv[i][7] = min(activityCsv[i][7] + SCORE_ADDED_PER_NEWS[j], 1.0)
+                    if datetime.strptime(data[dataIndex]['date'], '%B %d %Y') < \
+                        datetime.strptime(activityCsv[i][8], '%B %d %Y'):
+                        activityCsv[i][8] = data[dataIndex]['date']
                     break
             return activityCsv, availableActivityIndex
         
     # this is a brand new activity
     company = getCompanyById(companyId)
-    if company and company.data()['a.employeeNumber']:
-        totalEmployee = company.data()['a.employeeNumber']
+    if company and company.data()['c.employeeNumber']:
+        totalEmployee = company.data()['c.employeeNumber']
     elif company:
         totalEmployee = 1
     else:
