@@ -1,11 +1,21 @@
 # Tech Job Analysis
-[Dashboard for the analysis](http://ec2co-ecsel-1t8d57e7u9viu-277156907.us-east-1.elb.amazonaws.com:5005/)
 
 Code for scraping hire/layoff information on the web.
 
 Developed by Charlene Chiang and Tsai-Chen Hsieh
 
 Note that it does not include config, json, and csv files. 
+
+## Dashboard Overview
+The first page shows the whole graph, with an option the limit the size. 
+![neodash_complete_graph](pictures/neodash_complete_graph.jpg)
+You can get information on layoff activities (yellow node) and filter them. 
+![neodash_activity](pictures/neodash_activity.jpg)
+You can check out each industry and see its layoff activities. 
+![neodash_industry](pictures/neodash_industry.jpg)
+You can search compaines to get the organization map, such as parent companies or subsidiaries. 
+![neodash_organization](pictures/neodash_organization.jpg)
+
 
 ## Running the scripts 
 After cloning the repository and downloading all required libraries on your environment, go to your project's root directory, create `config.ini`, following the format below:
@@ -28,7 +38,7 @@ To run the script:
 python main.py
 ```
 
-## Module Explination
+## Module Explanation
 ### Crawl the web
 `crawl_reuters()` crawls Reuters to get the news. Search keyword is an input parameter, like `layoff` and `lay+off` (if your search has space, replace it with +). The next three is `startpage`: the index of the first page (usually 0), `endpage`: the total count of news for the search, `steps`: how many news for a page (usually 20). The raw data is stored in `data.json`. For each news, we have the following attributes: link, title, paragraph, date. In some rare cases where the date is not shown, then it will be replaced with `Janurary 1 2000`.
 
